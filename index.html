@@ -85,6 +85,26 @@
       background: #ffffff;
     }
 
+    /* textarea untuk custom kata-kata */
+    .setup-textarea {
+      width: 100%;
+      border-radius: 16px;
+      border: 1px solid #f4b2c5;
+      padding: 9px 14px;
+      font-size: 0.9rem;
+      outline: none;
+      background: #fff9fc;
+      resize: vertical;
+      min-height: 80px;
+      transition: border 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .setup-textarea:focus {
+      border-color: #ff4b73;
+      box-shadow: 0 0 0 2px rgba(255,75,115,0.18);
+      background: #ffffff;
+    }
+
     .setup-help {
       font-size: 0.75rem;
       color: #888;
@@ -435,6 +455,18 @@
       <div class="setup-help">Masukan Nomer Kamu Contoh 0812...).</div>
     </div>
 
+    <!-- TEXTAREA CUSTOM KATA-KATA -->
+    <div class="setup-group">
+      <label class="setup-label" for="inputMessage">Kata-kata kamu (opsional)</label>
+      <textarea
+        id="inputMessage"
+        class="setup-textarea"
+        rows="4"
+        placeholder="Contoh: Dari pertama kali kita sering chat, aku ngerasa nyaman banget sama kamu..."
+      ></textarea>
+      <div class="setup-help">Bisa kamu ganti sesuka hati. Kalau dikosongin, pakai teks default.</div>
+    </div>
+
     <button class="btn-mulai" id="btnMulai">
       Mulai 💌
     </button>
@@ -500,6 +532,7 @@
   // ===== VARIABEL GLOBAL =====
   let NAMA_TARGET = "";
   let WA_NUMBER = "";
+  let CUSTOM_MESSAGE = "";
 
   const setupScreen       = document.getElementById("setupScreen");
   const mainScreen        = document.getElementById("mainScreen");
@@ -525,6 +558,15 @@
   const closeVideo        = document.getElementById("closeVideo");
 
   function buatPesanNembak(nama) {
+    if (CUSTOM_MESSAGE) {
+      const msgHtml = CUSTOM_MESSAGE.replace(/\n/g, "<br>");
+      return `
+        ${msgHtml}
+        <br><br>
+        Jadi… <b>maukah kamu jadi pacarku, ${nama}?</b> 🥹❤️
+      `;
+    }
+
     return `
       Dari pertama kali kita sering chat, aku ngerasa nyaman banget sama kamu. 
       Kamu bikin hari-hari aku lebih berwarna dan spesial.
@@ -572,10 +614,12 @@
     const params = new URLSearchParams(window.location.search);
     const nama = params.get("n");
     const wa   = params.get("wa");
+    const msg  = params.get("m");
 
     if (nama && wa) {
-      NAMA_TARGET = nama;
-      WA_NUMBER   = wa;
+      NAMA_TARGET    = nama;
+      WA_NUMBER      = wa;
+      CUSTOM_MESSAGE = msg || "";
 
       namaTargetSpan.innerText = NAMA_TARGET;
       pesanNembakDiv.innerHTML = buatPesanNembak(NAMA_TARGET);
@@ -592,6 +636,7 @@
   btnMulai.addEventListener("click", () => {
     const nama = document.getElementById("inputNamaTarget").value.trim();
     let wa     = document.getElementById("inputWa").value.trim();
+    const msg  = document.getElementById("inputMessage").value.trim();
 
     if (!nama || !wa) {
       alert("Isi dulu nama target dan nomor WhatsApp kamu ya. 💌");
@@ -605,8 +650,9 @@
       wa = "62" + wa.slice(1);
     }
 
-    NAMA_TARGET = nama;
-    WA_NUMBER   = wa;
+    NAMA_TARGET    = nama;
+    WA_NUMBER      = wa;
+    CUSTOM_MESSAGE = msg;
 
     namaTargetSpan.innerText  = NAMA_TARGET;
     pesanNembakDiv.innerHTML  = buatPesanNembak(NAMA_TARGET);
@@ -624,6 +670,10 @@
       n: NAMA_TARGET,
       wa: WA_NUMBER,
     });
+
+    if (CUSTOM_MESSAGE) {
+      shareParams.set("m", CUSTOM_MESSAGE);
+    }
 
     const newUrl = window.location.origin + window.location.pathname + "?" + shareParams.toString();
 
