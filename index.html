@@ -357,7 +357,7 @@
     .video-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.9); /* layar hitam */
+      background: rgba(0, 0, 0, 0.9);
       display: none;
       align-items: center;
       justify-content: center;
@@ -379,7 +379,7 @@
       display: block;
       width: 100%;
       height: auto;
-      object-fit: contain;  /* jaga rasio 9:16 */
+      object-fit: contain;
       background: #000;
     }
 
@@ -415,14 +415,14 @@
 </head>
 <body>
 
-<!-- MUSIK LATAR (ganti src dengan file mp3 kamu) -->
+<!-- MUSIK LATAR -->
 <audio id="bgMusic" src="musik.mp3" loop></audio>
 
 <div class="page-wrapper">
   <!-- ========== HALAMAN AWAL ========== -->
   <div class="setup-card" id="setupScreen">
-    <div class="setup-title">Bikin Halaman Nembak Kamu 💌</div>
-    <div class="setup-subtitle">Isi data di bawah dan klik mulai, lalu kirim link ini ke orang yang mau kamu tembak.</div>
+    <div class="setup-title">Mau Nembak Siapa? 💌</div>
+    <div class="setup-subtitle">Isi data di bawah dan klik mulai, lalu kirim link yang sudah otomatis tercopy ke orang yang mau kamu tembak.</div>
 
     <div class="setup-group">
       <label class="setup-label" for="inputNamaTarget">Nama yang mau kamu tembak</label>
@@ -432,7 +432,7 @@
     <div class="setup-group">
       <label class="setup-label" for="inputWa">Nomor WhatsApp kamu</label>
       <input id="inputWa" class="setup-input" type="text" placeholder="Contoh: 62812xxxxxxxx">
-      <div class="setup-help">Gunakan format internasional, misal Indonesia: 62812xxxx (bukan 0812...).</div>
+      <div class="setup-help">Masukan Nomer Kamu Contoh 0812...).</div>
     </div>
 
     <button class="btn-mulai" id="btnMulai">
@@ -448,7 +448,7 @@
     <p class="subtitle">Ada sesuatu yang dari tadi mau aku bilang ke kamu…</p>
 
     <div class="message" id="pesanNembak">
-      <!-- akan diisi lewat JS -->
+      <!-- diisi JS -->
     </div>
 
     <div class="buttons">
@@ -471,7 +471,7 @@
   <div class="dev-card">
     <div class="dev-text">
       <div class="dev-main">Developer By Fahrul Riskiana</div>
-      <div class="dev-note">Notes!! Kalo Diterima Wajib PJ (Pajak Jadian) Ke gw</div>
+      <div class="dev-note">Notes!! Kalo Diterima Wajib PJ (Pajak Jadian) Ke gw 🤭</div>
     </div>
   </div>
 </div>
@@ -560,6 +560,13 @@
     }
   });
 
+  // fallback: kalau autoplay diblokir, klik pertama di body nyalain musik
+  document.body.addEventListener("click", () => {
+    if (!isMusicPlaying) {
+      playMusic();
+    }
+  }, { once: true });
+
   // ====== CEK URL SAAT PERTAMA DIBUKA (AUTO MASUK HALAMAN NEMBAK) ======
   window.addEventListener("DOMContentLoaded", () => {
     const params = new URLSearchParams(window.location.search);
@@ -640,9 +647,8 @@
   // ====== JAWAB "IYA" ======
   btnYes.addEventListener("click", () => {
     successBox.style.display = "block";
-    successExtra.innerHTML = `Makasih ya, ${NAMA_TARGET || "kamu"} 🥰 Sekarang kamu resmi jadi orang paling spesial di hidup aku.`;
+    successExtra.innerHTML = `Makasih ya, ${NAMA_TARGET || "kamu"} 🥰 Udah Mau Nerima Aku, Aku Seneng Banget.`;
 
-    // Buka WhatsApp ke nomor pengirim (suara cewe yang jawab IYA)
     if (WA_NUMBER) {
       const waText = encodeURIComponent(
 `Hai, aku ${NAMA_TARGET} 🥰❤️
@@ -656,8 +662,6 @@ Btw aku baru aja klik "IYA" barusan 😭💞`
   });
 
   // ====== TOMBOL "ENGGAK" KABUR + HUJAN + VIDEO ======
-  let noClickCount = 0;
-
   function geserTombolNo() {
     const parent = btnNo.parentElement.getBoundingClientRect();
     const maxX = parent.width - btnNo.offsetWidth;
@@ -717,20 +721,10 @@ Btw aku baru aja klik "IYA" barusan 😭💞`
   });
 
   btnNo.addEventListener("click", () => {
-    noClickCount++;
     showSadRain();
-    showRejectVideo(); // setiap klik Enggak, munculkan video
-
-    if (noClickCount < 3) {
-      alert("Yakin banget mau nolak? 😭 Pikirin lagi ya...");
-      geserTombolNo();
-    } else if (noClickCount < 5) {
-      alert("Plis jangan nolak aku... 🥺");
-      geserTombolNo();
-    } else {
-      alert("Yaudah deh kalo kamu maksa... tapi hatiku tetep buat kamu 😢");
-      geserTombolNo();
-    }
+    showRejectVideo();
+    pauseMusic();      // musik berhenti
+    geserTombolNo();   // tetap kabur dikit
   });
 
   // ====== CONFETTI ======
