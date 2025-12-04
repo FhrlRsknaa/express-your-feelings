@@ -353,6 +353,60 @@
       font-size: 1rem;
     }
 
+    /* OVERLAY VIDEO 9:16 */
+    .video-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9); /* layar hitam */
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .video-box {
+      position: relative;
+      width: min(360px, 80vw);   /* cocok untuk 9:16 */
+      max-height: 80vh;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      background: #000;
+      animation: video-pop 0.3s ease-out;
+    }
+
+    .video-player {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;  /* jaga rasio 9:16 */
+      background: #000;
+    }
+
+    .video-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      border: none;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.9);
+      z-index: 2;
+    }
+
+    @keyframes video-pop {
+      from {
+        transform: scale(0.6);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
     @media (max-width: 400px) {
       h1 { font-size: 1.32rem; }
       .message { font-size: 0.9rem; }
@@ -367,8 +421,8 @@
 <div class="page-wrapper">
   <!-- ========== HALAMAN AWAL ========== -->
   <div class="setup-card" id="setupScreen">
-    <div class="setup-title">Bikin Halaman Nembak Kamu 💘</div>
-    <div class="setup-subtitle">Isi data di bawah dan ketik mulai, lalu kirim link ini ke orang yang mau kamu tembak.</div>
+    <div class="setup-title">Bikin Halaman Nembak Kamu 💌</div>
+    <div class="setup-subtitle">Isi data di bawah dan klik mulai, lalu kirim link ini ke orang yang mau kamu tembak.</div>
 
     <div class="setup-group">
       <label class="setup-label" for="inputNamaTarget">Nama yang mau kamu tembak</label>
@@ -431,6 +485,17 @@
 <div class="confetti" id="confettiContainer"></div>
 <div class="rain-overlay" id="rainOverlay"></div>
 
+<!-- OVERLAY VIDEO 9:16 SAAT DITOLAK -->
+<div id="videoOverlay" class="video-overlay">
+  <div class="video-box">
+    <button id="closeVideo" class="video-close">✕</button>
+    <video id="sadVideo" class="video-player" controls autoplay>
+      <source src="nolak.mp4" type="video/mp4" />
+      Browser kamu tidak mendukung video 😢
+    </video>
+  </div>
+</div>
+
 <script>
   // ===== VARIABEL GLOBAL =====
   let NAMA_TARGET = "";
@@ -455,6 +520,10 @@
   const musicLabel        = musicToggle.querySelector(".label");
   let isMusicPlaying      = false;
 
+  const videoOverlay      = document.getElementById("videoOverlay");
+  const sadVideo          = document.getElementById("sadVideo");
+  const closeVideo        = document.getElementById("closeVideo");
+
   function buatPesanNembak(nama) {
     return `
       Dari pertama kali kita sering chat, aku ngerasa nyaman banget sama kamu. 
@@ -472,7 +541,6 @@
       musicIcon.textContent  = "🎵";
       musicLabel.textContent = "Musik on";
     } catch (e) {
-      // kalau gagal (misal browser blokir), biarin aja
       console.log("Gagal memutar musik:", e);
     }
   }
@@ -488,6 +556,27 @@
     if (isMusicPlaying) {
       pauseMusic();
     } else {
+      playMusic();
+    }
+  });
+
+  // ====== CEK URL SAAT PERTAMA DIBUKA (AUTO MASUK HALAMAN NEMBAK) ======
+  window.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    const nama = params.get("n");
+    const wa   = params.get("wa");
+
+    if (nama && wa) {
+      NAMA_TARGET = nama;
+      WA_NUMBER   = wa;
+
+      namaTargetSpan.innerText = NAMA_TARGET;
+      pesanNembakDiv.innerHTML = buatPesanNembak(NAMA_TARGET);
+
+      setupScreen.style.display = "none";
+      mainScreen.style.display  = "block";
+      window.scrollTo({ top: 0 });
+
       playMusic();
     }
   });
@@ -520,8 +609,32 @@
     mainScreen.style.display  = "block";
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    // Coba mulai musik saat user klik "Mulai"
+    // Coba mulai musik
     playMusic();
+
+    // ====== GENERATE LINK & OTOMATIS COPY ======
+    const shareParams = new URLSearchParams({
+      n: NAMA_TARGET,
+      wa: WA_NUMBER,
+    });
+
+    const newUrl = window.location.origin + window.location.pathname + "?" + shareParams.toString();
+
+    // Update URL di address bar
+    window.history.replaceState({}, "", newUrl);
+
+    // Copy ke clipboard (butuh https)
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(newUrl)
+        .then(() => {
+          alert("Link sudah otomatis disalin! Tinggal paste ke chat dia ❤️");
+        })
+        .catch(() => {
+          alert("Ini link-nya, salin manual ya:\n\n" + newUrl);
+        });
+    } else {
+      alert("Ini link-nya, salin manual ya:\n\n" + newUrl);
+    }
   });
 
   // ====== JAWAB "IYA" ======
@@ -542,7 +655,7 @@ Btw aku baru aja klik "IYA" barusan 😭💞`
     buatConfetti();
   });
 
-  // ====== TOMBOL "ENGGAK" KABUR + HUJAN ======
+  // ====== TOMBOL "ENGGAK" KABUR + HUJAN + VIDEO ======
   let noClickCount = 0;
 
   function geserTombolNo() {
@@ -556,6 +669,49 @@ Btw aku baru aja klik "IYA" barusan 😭💞`
     btnNo.style.transform = `translate(${randomX}px, ${randomY}px)`;
   }
 
+  function showSadRain() {
+    rainOverlay.innerHTML = "";
+    rainOverlay.style.display = "flex";
+
+    const emoji = document.createElement("div");
+    emoji.className = "rain-emoji";
+    emoji.textContent = "😭";
+    rainOverlay.appendChild(emoji);
+
+    const dropCount = 80;
+    for (let i = 0; i < dropCount; i++) {
+      const drop = document.createElement("div");
+      drop.className = "raindrop";
+      drop.style.left = Math.random() * 100 + "vw";
+      drop.style.animationDuration = 0.8 + Math.random() * 0.7 + "s";
+      drop.style.animationDelay = Math.random() * 0.5 + "s";
+      rainOverlay.appendChild(drop);
+    }
+
+    setTimeout(() => {
+      rainOverlay.style.display = "none";
+      rainOverlay.innerHTML = "";
+    }, 2500);
+  }
+
+  function showRejectVideo() {
+    videoOverlay.style.display = "flex";
+    sadVideo.currentTime = 0;
+    sadVideo.play();
+  }
+
+  function hideRejectVideo() {
+    videoOverlay.style.display = "none";
+    sadVideo.pause();
+  }
+
+  closeVideo.addEventListener("click", hideRejectVideo);
+  videoOverlay.addEventListener("click", (e) => {
+    if (e.target === videoOverlay) {
+      hideRejectVideo();
+    }
+  });
+
   btnNo.addEventListener("mouseenter", () => {
     geserTombolNo();
   });
@@ -563,6 +719,7 @@ Btw aku baru aja klik "IYA" barusan 😭💞`
   btnNo.addEventListener("click", () => {
     noClickCount++;
     showSadRain();
+    showRejectVideo(); // setiap klik Enggak, munculkan video
 
     if (noClickCount < 3) {
       alert("Yakin banget mau nolak? 😭 Pikirin lagi ya...");
@@ -602,32 +759,6 @@ Btw aku baru aja klik "IYA" barusan 😭💞`
       confettiContainer.style.display = "none";
       confettiContainer.innerHTML = "";
     }, 5000);
-  }
-
-  // ====== HUJAN SEDIH ======
-  function showSadRain() {
-    rainOverlay.innerHTML = "";
-    rainOverlay.style.display = "flex";
-
-    const emoji = document.createElement("div");
-    emoji.className = "rain-emoji";
-    emoji.textContent = "😭";
-    rainOverlay.appendChild(emoji);
-
-    const dropCount = 80;
-    for (let i = 0; i < dropCount; i++) {
-      const drop = document.createElement("div");
-      drop.className = "raindrop";
-      drop.style.left = Math.random() * 100 + "vw";
-      drop.style.animationDuration = 0.8 + Math.random() * 0.7 + "s";
-      drop.style.animationDelay = Math.random() * 0.5 + "s";
-      rainOverlay.appendChild(drop);
-    }
-
-    setTimeout(() => {
-      rainOverlay.style.display = "none";
-      rainOverlay.innerHTML = "";
-    }, 2500);
   }
 </script>
 
